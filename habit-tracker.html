@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="theme-color" content="#faf9f7">
+<title>Habits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf9f7;
+  --surface: #f2f0ec;
+  --surface2: #e8e5de;
+  --border: rgba(0,0,0,0.08);
+  --border-med: rgba(0,0,0,0.14);
+  --text: #1a1916;
+  --text-2: #6b6760;
+  --text-3: #a09d98;
+  --green: #2d7a5f;
+  --green-bg: #eaf4ef;
+  --green-border: #b8dece;
+  --amber: #c47c1a;
+  --amber-bg: #fef3e2;
+  --red: #c0392b;
+  --info: #2563a8;
+  --info-bg: #eff4fb;
+  --info-border: #bcd1ef;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614;
+    --surface: #201f1c;
+    --surface2: #2a2926;
+    --border: rgba(255,255,255,0.08);
+    --border-med: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --text-2: #9c9891;
+    --text-3: #5c5a55;
+    --green: #4daa86;
+    --green-bg: #122a21;
+    --green-border: #1e4a38;
+    --amber: #e09832;
+    --amber-bg: #261c0a;
+    --red: #e05c4e;
+    --info: #5b93d4;
+    --info-bg: #0e1e32;
+    --info-border: #1d3a5f;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+body { padding-bottom: env(safe-area-inset-bottom); }
+
+.app { max-width: 500px; margin: 0 auto; padding: 0 16px 40px; min-height: 100vh; }
+
+.header { padding: 20px 0 4px; display: flex; align-items: baseline; justify-content: space-between; }
+.header h1 { font-family: var(--font-display); font-size: 28px; font-weight: 400; color: var(--text); }
+.header .subtitle { font-size: 12px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--text-3); cursor: pointer; letter-spacing: 0.02em; transition: color 0.15s, border-color 0.15s; }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+
+.hero { background: var(--surface); border-radius: var(--radius); padding: 18px 20px 14px; margin-bottom: 16px; }
+.hero-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.hero-pct { font-family: var(--font-display); font-size: 42px; line-height: 1; color: var(--text); }
+.hero-sub { font-size: 12px; color: var(--text-3); margin-top: 3px; letter-spacing: 0.02em; }
+.coin-pill { display: flex; align-items: center; gap: 7px; background: var(--bg); border: 1px solid var(--border-med); border-radius: 20px; padding: 6px 14px; }
+.coin-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.coin-num { font-size: 15px; font-weight: 500; }
+.coin-lbl { font-size: 11px; color: var(--text-3); }
+.pbar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+.pbar-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.4s ease; }
+
+.day-strip { display: flex; gap: 5px; }
+.day-cell { flex: 1; text-align: center; padding: 7px 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.12s; min-width: 0; -webkit-tap-highlight-color: transparent; }
+.day-cell:active { transform: scale(0.95); }
+.day-cell.active { background: var(--text); border-color: var(--text); }
+.day-cell.future { opacity: 0.3; cursor: default; pointer-events: none; }
+.day-cell .dn { font-size: 10px; font-weight: 500; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.day-cell .dp { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.day-cell.active .dn, .day-cell.active .dp { color: var(--bg); }
+
+.past-banner { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius-sm); padding: 9px 14px; font-size: 13px; color: var(--info); display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.past-banner button { background: none; border: 1px solid var(--info-border); color: var(--info); border-radius: 6px; padding: 3px 9px; font-size: 12px; font-family: var(--font-body); cursor: pointer; }
+
+.habit-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.habit-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; transition: border-color 0.15s, background 0.15s; }
+.habit-card.checked { border-color: var(--green-border); background: var(--green-bg); }
+.habit-row { display: flex; align-items: center; gap: 11px; }
+.check-circle { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border-med); background: none; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+.check-circle.on { background: var(--green); border-color: var(--green); }
+.check-circle.on::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-2px); }
+.check-circle:disabled { opacity: 0.4; cursor: default; }
+.habit-name { flex: 1; font-size: 15px; line-height: 1.4; }
+.habit-name.crossed { text-decoration: line-through; color: var(--text-3); }
+.icon-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--text-3); cursor: pointer; font-family: var(--font-body); white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+.habit-note { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+.empty { text-align: center; padding: 24px 0; font-size: 14px; color: var(--text-3); }
+
+.add-form { background: var(--surface); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; }
+.form-label { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: block; }
+.add-form input, .add-form textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border-med);
+  border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px;
+  color: var(--text); font-family: var(--font-body); margin-bottom: 8px;
+  outline: none; transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.add-form input:focus, .add-form textarea:focus { border-color: var(--text-2); }
+.add-form textarea { height: 64px; resize: none; }
+.add-form input::placeholder, .add-form textarea::placeholder { color: var(--text-3); }
+.btn-add { background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); padding: 10px 20px; font-size: 14px; font-weight: 500; font-family: var(--font-body); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+.threshold-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); margin-bottom: 16px; flex-wrap: wrap; }
+.threshold-row input { width: 58px; background: var(--surface); border: 1px solid var(--border-med); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 14px; color: var(--text); font-family: var(--font-body); outline: none; text-align: center; -webkit-appearance: none; }
+
+.stats-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.stat-card { flex: 1; background: var(--surface); border-radius: var(--radius-sm); padding: 12px 14px; }
+.stat-num { font-family: var(--font-display); font-size: 24px; color: var(--text); }
+.stat-lbl { font-size: 11px; color: var(--text-3); margin-top: 2px; line-height: 1.3; }
+
+.reward-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+.reward-card.redeemed-card { opacity: 0.55; }
+.reward-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; gap: 8px; }
+.reward-name { font-size: 15px; font-weight: 500; flex: 1; }
+.reward-cost-pill { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-2); flex-shrink: 0; }
+.reward-progress-lbl { font-size: 12px; color: var(--text-3); margin-bottom: 5px; }
+.reward-actions { margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+.redeem-btn { padding: 5px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-med); background: none; font-size: 13px; font-family: var(--font-body); color: var(--text-3); cursor: default; }
+.redeem-btn.ready { background: var(--green); border-color: var(--green); color: #fff; cursor: pointer; }
+.redeemed-lbl { font-size: 13px; color: var(--green); font-weight: 500; }
+
+.history-section { margin-top: 20px; }
+.history-title { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--surface); border-radius: var(--radius-sm); font-size: 13px; }
+.history-row.met { background: var(--green-bg); }
+.history-week { color: var(--text-2); }
+.history-right { display: flex; align-items: center; gap: 8px; }
+.history-pct { font-weight: 500; }
+.history-badge { font-size: 11px; border-radius: 10px; padding: 2px 8px; }
+.history-badge.earned { background: var(--green); color: #fff; }
+.history-badge.missed { background: var(--surface2); color: var(--text-3); }
+
+.toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-family: var(--font-body); opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Habits</h1>
+    <span class="subtitle" id="today-label"></span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('habits')">This week</button>
+    <button class="tab-btn" onclick="showTab('rewards')">Reward shop</button>
+  </div>
+
+  <!-- HABITS TAB -->
+  <div id="tab-habits">
+    <div class="hero">
+      <div class="hero-row">
+        <div>
+          <div class="hero-pct" id="pct-display">—</div>
+          <div class="hero-sub" id="week-label"></div>
+        </div>
+        <div>
+          <div class="coin-pill">
+            <span class="coin-dot"></span>
+            <span class="coin-num" id="coin-count">0</span>
+            <span class="coin-lbl">coins</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:5px;" id="threshold-hint"></div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pbar-fill" id="pbar-fill" style="width:0%"></div></div>
+      <div class="day-strip" id="day-strip"></div>
+    </div>
+
+    <div id="past-banner" class="past-banner" style="display:none;">
+      <span id="past-banner-text"></span>
+      <button onclick="goToday()">Today</button>
+    </div>
+
+    <div class="habit-list" id="habit-list"></div>
+
+    <div class="add-form">
+      <span class="form-label">Add habit</span>
+      <input type="text" id="new-habit-name" placeholder="e.g. Exercise 30 min" maxlength="80">
+      <textarea id="new-habit-note" placeholder="Notes (optional — tap 'note' to reveal)"></textarea>
+      <button class="btn-add" onclick="addHabit()">Add</button>
+    </div>
+  </div>
+
+  <!-- REWARDS TAB -->
+  <div id="tab-rewards" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="coin-display-r">0</div>
+        <div class="stat-lbl">Available coins</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="weeks-met-num">0</div>
+        <div class="stat-lbl">Weeks above threshold</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="weeks-total-num">0</div>
+        <div class="stat-lbl">Weeks tracked</div>
+      </div>
+    </div>
+
+    <div class="threshold-row">
+      <span>Earn a coin when week reaches</span>
+      <input type="number" id="threshold-input" min="1" max="100" onchange="saveThreshold()">
+      <span>% completion</span>
+    </div>
+
+    <div id="reward-list"></div>
+
+    <div class="add-form">
+      <span class="form-label">Add reward</span>
+      <input type="text" id="new-reward-name" placeholder="Reward name" maxlength="80">
+      <input type="number" id="new-reward-cost" placeholder="Coins needed" min="1" style="margin-bottom:8px;">
+      <textarea id="new-reward-note" placeholder="Notes about this reward (optional)"></textarea>
+      <button class="btn-add" onclick="addReward()">Add reward</button>
+    </div>
+
+    <div class="history-section" id="history-section"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const STORAGE_KEY = 'habitapp_v1';
+
+// State shape:
+// weekChecks: { [weekKey]: { [dateKey]: { [habitId]: bool } } }
+//   — pruned to current week + previous week only (day-level data)
+// weekHistory: [{ key, pct, met, coinAwarded }]
+//   — kept forever; used for coin FIFO and reward progress
+let state = {
+  habits: [],
+  rewards: [],
+  coins: 0,
+  threshold: 70,
+  currentWeekKey: '',
+  weekChecks: {},
+  weekHistory: []
+};
+
+let viewDay = null;
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function toDateKey(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+function todayKey() { return toDateKey(new Date()); }
+
+// Week starts Sunday
+function weekKeyOf(dateStrOrDate) {
+  const d = dateStrOrDate instanceof Date
+    ? new Date(dateStrOrDate) : new Date(dateStrOrDate + 'T00:00:00');
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay());
+  return toDateKey(d);
+}
+
+function weekStartDate(wk) { return new Date(wk + 'T00:00:00'); }
+
+function weekLabel(wk) {
+  const s = weekStartDate(wk);
+  const e = new Date(s); e.setDate(e.getDate()+6);
+  const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return fmt(s) + ' – ' + fmt(e);
+}
+
+function advanceWeek(wk) {
+  const d = weekStartDate(wk);
+  d.setDate(d.getDate()+7);
+  return toDateKey(d);
+}
+
+function prevWeekKey(wk) {
+  const d = weekStartDate(wk);
+  d.setDate(d.getDate()-7);
+  return toDateKey(d);
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      state = Object.assign({}, state, parsed);
+    }
+  } catch(e) {}
+}
+
+// Keep day-level check data only for current week + immediately previous week
+function pruneOldDayData() {
+  const keep = new Set([state.currentWeekKey, prevWeekKey(state.currentWeekKey)]);
+  Object.keys(state.weekChecks).forEach(wk => {
+    if (!keep.has(wk)) delete state.weekChecks[wk];
+  });
+}
+
+// ── Percentage helpers ────────────────────────────────────────────────────────
+function weekPct(weekKey) {
+  if (!state.habits.length) return 0;
+  const ws = weekStartDate(weekKey);
+  const today = new Date(); today.setHours(23,59,59,999);
+  let total = 0, done = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws); d.setDate(d.getDate()+i);
+    if (d > today) break;
+    const dk = toDateKey(d);
+    const checks = ((state.weekChecks[weekKey]||{})[dk])||{};
+    state.habits.forEach(h => { total++; if (checks[h.id]) done++; });
+  }
+  return total ? Math.round(done/total*100) : 0;
+}
+
+function dayPct(weekKey, dk) {
+  if (!state.habits.length) return null;
+  const checks = ((state.weekChecks[weekKey]||{})[dk])||{};
+  return Math.round(state.habits.filter(h => checks[h.id]).length / state.habits.length * 100);
+}
+
+// ── Week rollover — runs only on app open ─────────────────────────────────────
+function checkRollover() {
+  const today = todayKey();
+  const currentWk = weekKeyOf(today);
+
+  if (!state.currentWeekKey) {
+    state.currentWeekKey = currentWk;
+    save(); return;
+  }
+  if (state.currentWeekKey === currentWk) return; // same week, nothing to do
+
+  // Score all weeks between last known week and current week
+  let wk = state.currentWeekKey;
+  let newCoins = 0;
+  let lastScored = null;
+  while (wk !== currentWk) {
+    const alreadyLogged = state.weekHistory.find(h => h.key === wk);
+    if (!alreadyLogged) {
+      const pct = weekPct(wk);
+      const met = pct >= state.threshold;
+      state.weekHistory.push({ key: wk, pct, met, coinAwarded: met });
+      if (met) { state.coins++; newCoins++; }
+      lastScored = { pct, met };
+    }
+    wk = advanceWeek(wk);
+  }
+
+  state.currentWeekKey = currentWk;
+  pruneOldDayData();
+  save();
+
+  if (lastScored) {
+    if (lastScored.met) toast('New week! Last week: ' + lastScored.pct + '% — coin earned!');
+    else toast('New week started. Last week: ' + lastScored.pct + '%');
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('today-label').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('threshold-input').value = state.threshold;
+  document.getElementById('threshold-hint').textContent = 'Coin at ' + state.threshold + '%+';
+
+  const pct = weekPct(state.currentWeekKey);
+  document.getElementById('pct-display').textContent = pct + '%';
+  document.getElementById('week-label').textContent = weekLabel(state.currentWeekKey);
+  document.getElementById('pbar-fill').style.width = pct + '%';
+  document.getElementById('coin-count').textContent = state.coins;
+  document.getElementById('coin-display-r').textContent = state.coins;
+
+  const metCount = state.weekHistory.filter(w => w.met).length;
+  document.getElementById('weeks-met-num').textContent = metCount;
+  document.getElementById('weeks-total-num').textContent = state.weekHistory.length;
+
+  renderDayStrip();
+  renderHabits();
+  renderRewards();
+  renderHistory();
+
+  const isToday = viewDay === todayKey();
+  document.getElementById('past-banner').style.display = isToday ? 'none' : 'flex';
+  if (!isToday && viewDay) {
+    const vd = new Date(viewDay + 'T00:00:00');
+    document.getElementById('past-banner-text').textContent =
+      'Viewing ' + vd.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}) + ' (read only)';
+  }
+}
+
+function renderDayStrip() {
+  const ws = weekStartDate(state.currentWeekKey);
+  const today = new Date(); today.setHours(0,0,0,0);
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws); d.setDate(d.getDate()+i);
+    const dk = toDateKey(d);
+    const isFuture = d > today;
+    const isActive = dk === viewDay;
+    const pct = isFuture ? null : dayPct(state.currentWeekKey, dk);
+    html += '<div class="day-cell' + (isActive?' active':'') + (isFuture?' future':'') + '" onclick="selectDay(\'' + dk + '\')">' +
+      '<div class="dn">' + DAYS_SHORT[d.getDay()] + '</div>' +
+      '<div class="dp">' + (pct === null ? '' : pct + '%') + '</div>' +
+      '</div>';
+  }
+  document.getElementById('day-strip').innerHTML = html;
+}
+
+function renderHabits() {
+  const el = document.getElementById('habit-list');
+  if (!state.habits.length) {
+    el.innerHTML = '<div class="empty">Add your first habit below.</div>';
+    return;
+  }
+  const isToday = viewDay === todayKey();
+
+  // Determine which week's data to look at for viewDay
+  const vdWk = weekKeyOf(viewDay);
+  const checks = ((state.weekChecks[vdWk]||{})[viewDay])||{};
+
+  el.innerHTML = state.habits.map(h => {
+    const done = !!checks[h.id];
+    const hasNote = h.note && h.note.trim();
+    return '<div class="habit-card' + (done?' checked':'') + '">' +
+      '<div class="habit-row">' +
+      '<button class="check-circle' + (done?' on':'') + '"' + (isToday?'':' disabled') + ' onclick="toggleHabit(\'' + h.id + '\')"></button>' +
+      '<span class="habit-name' + (done?' crossed':'') + '">' + escHtml(h.name) + '</span>' +
+      (hasNote ? '<button class="icon-btn" onclick="toggleEl(\'hn-' + h.id + '\')">note</button>' : '') +
+      (isToday ? '<button class="icon-btn" onclick="deleteHabit(\'' + h.id + '\')">&#215;</button>' : '') +
+      '</div>' +
+      (hasNote ? '<div class="habit-note" id="hn-' + h.id + '" style="display:none;">' + escHtml(h.note) + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function renderRewards() {
+  const el = document.getElementById('reward-list');
+  if (!state.rewards.length) {
+    el.innerHTML = '<div class="empty">No rewards yet — add one below.</div>';
+    return;
+  }
+  const wksMet = state.weekHistory.filter(w => w.met).length;
+  el.innerHTML = state.rewards.map(r => {
+    const progress = Math.min(wksMet, r.cost);
+    const canAfford = !r.redeemed && state.coins >= r.cost;
+    const hasNote = r.note && r.note.trim();
+    const barPct = r.cost > 0 ? Math.round(progress/r.cost*100) : 0;
+    return '<div class="reward-card' + (r.redeemed?' redeemed-card':'') + '">' +
+      '<div class="reward-top">' +
+        '<span class="reward-name">' + escHtml(r.name) + '</span>' +
+        '<span class="reward-cost-pill"><span class="coin-dot"></span>' + r.cost + '</span>' +
+      '</div>' +
+      (hasNote
+        ? '<button class="icon-btn" style="margin-bottom:6px;" onclick="toggleEl(\'rn-' + r.id + '\')">note</button>' +
+          '<div class="habit-note" id="rn-' + r.id + '" style="display:none;">' + escHtml(r.note) + '</div>'
+        : '') +
+      '<div class="reward-progress-lbl">' + progress + ' / ' + r.cost + ' qualifying weeks</div>' +
+      '<div class="pbar" style="margin-bottom:0;"><div class="pbar-fill" style="width:' + barPct + '%;background:var(--amber);"></div></div>' +
+      '<div class="reward-actions">' +
+        (r.redeemed
+          ? '<span class="redeemed-lbl">Redeemed</span>'
+          : '<button class="redeem-btn' + (canAfford?' ready':'') + '" onclick="redeemReward(\'' + r.id + '\')">' +
+              (canAfford ? 'Redeem' : state.coins + '/' + r.cost + ' coins') + '</button>') +
+        '<button class="icon-btn" onclick="deleteReward(\'' + r.id + '\')">&#215;</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderHistory() {
+  const sec = document.getElementById('history-section');
+  if (!state.weekHistory.length) { sec.innerHTML = ''; return; }
+  const rows = state.weekHistory.slice().reverse().map(w =>
+    '<div class="history-row' + (w.met?' met':'') + '">' +
+      '<span class="history-week">' + weekLabel(w.key) + '</span>' +
+      '<div class="history-right">' +
+        '<span class="history-pct">' + w.pct + '%</span>' +
+        (w.met
+          ? '<span class="history-badge earned">Coin earned</span>'
+          : '<span class="history-badge missed">Below threshold</span>') +
+      '</div></div>'
+  ).join('');
+  sec.innerHTML = '<div class="history-title">Week history</div><div class="history-list">' + rows + '</div>';
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function toggleHabit(id) {
+  if (viewDay !== todayKey()) return;
+  const wk = state.currentWeekKey;
+  if (!state.weekChecks[wk]) state.weekChecks[wk] = {};
+  if (!state.weekChecks[wk][viewDay]) state.weekChecks[wk][viewDay] = {};
+  state.weekChecks[wk][viewDay][id] = !state.weekChecks[wk][viewDay][id];
+  save(); render();
+}
+
+function addHabit() {
+  const name = document.getElementById('new-habit-name').value.trim();
+  if (!name) return;
+  const note = document.getElementById('new-habit-note').value.trim();
+  state.habits.push({ id: String(Date.now()), name, note });
+  document.getElementById('new-habit-name').value = '';
+  document.getElementById('new-habit-note').value = '';
+  save(); render();
+}
+
+function deleteHabit(id) {
+  state.habits = state.habits.filter(h => h.id !== id);
+  for (const wk in state.weekChecks)
+    for (const dk in state.weekChecks[wk])
+      delete state.weekChecks[wk][dk][id];
+  save(); render();
+}
+
+function addReward() {
+  const name = document.getElementById('new-reward-name').value.trim();
+  const cost = parseInt(document.getElementById('new-reward-cost').value);
+  if (!name || !cost || cost < 1) return;
+  const note = document.getElementById('new-reward-note').value.trim();
+  state.rewards.push({ id: String(Date.now()), name, cost, note, redeemed: false });
+  document.getElementById('new-reward-name').value = '';
+  document.getElementById('new-reward-cost').value = '';
+  document.getElementById('new-reward-note').value = '';
+  save(); render();
+}
+
+function deleteReward(id) {
+  state.rewards = state.rewards.filter(r => r.id !== id);
+  save(); render();
+}
+
+function redeemReward(id) {
+  const r = state.rewards.find(r => r.id === id);
+  if (!r || r.redeemed || state.coins < r.cost) return;
+  state.coins -= r.cost;
+  r.redeemed = true;
+  save(); render();
+  toast('Reward redeemed!');
+}
+
+function saveThreshold() {
+  state.threshold = Math.max(1, Math.min(100, parseInt(document.getElementById('threshold-input').value)||70));
+  document.getElementById('threshold-input').value = state.threshold;
+  save(); render();
+}
+
+function selectDay(dk) { viewDay = dk; render(); }
+function goToday() { viewDay = todayKey(); render(); }
+
+function showTab(t) {
+  document.getElementById('tab-habits').style.display = t === 'habits' ? '' : 'none';
+  document.getElementById('tab-rewards').style.display = t === 'rewards' ? '' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) =>
+    b.classList.toggle('active', (i===0&&t==='habits')||(i===1&&t==='rewards')));
+}
+
+function toggleEl(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+load();
+checkRollover(); // on open only — no interval
+viewDay = todayKey();
+render();
+</script>
+</body>
+</html>

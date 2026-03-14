@@ -452,7 +452,7 @@ function render() {
   if (!isToday && viewDay) {
     const vd = new Date(viewDay + 'T00:00:00');
     document.getElementById('past-banner-text').textContent =
-      'Viewing ' + vd.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}) + ' (read only)';
+      'Viewing ' + vd.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   }
 }
 
@@ -481,6 +481,9 @@ function renderHabits() {
     return;
   }
   const isToday = viewDay === todayKey();
+  // Editable = any day in current or previous week (data is retained for both)
+  const retainedWeeks = new Set([state.currentWeekKey, prevWeekKey(state.currentWeekKey)]);
+  const isEditable = retainedWeeks.has(weekKeyOf(viewDay));
 
   // Determine which week's data to look at for viewDay
   const vdWk = weekKeyOf(viewDay);
@@ -491,10 +494,10 @@ function renderHabits() {
     const hasNote = h.note && h.note.trim();
     return '<div class="habit-card' + (done?' checked':'') + '">' +
       '<div class="habit-row">' +
-      '<button class="check-circle' + (done?' on':'') + '"' + (isToday?'':' disabled') + ' onclick="toggleHabit(\'' + h.id + '\')"></button>' +
+      '<button class="check-circle' + (done?' on':'') + '"' + (isEditable?'':' disabled') + ' onclick="toggleHabit(\'' + h.id + '\')"></button>' +
       '<span class="habit-name' + (done?' crossed':'') + '">' + escHtml(h.name) + '</span>' +
       (hasNote ? '<button class="icon-btn" onclick="toggleEl(\'hn-' + h.id + '\')">note</button>' : '') +
-      (isToday ? '<button class="icon-btn" onclick="openEditHabit(\'' + h.id + '\')">edit</button>' : '') +
+      '<button class="icon-btn" onclick="openEditHabit(\'' + h.id + '\')">edit</button>' +
       (isToday ? '<button class="icon-btn" onclick="deleteHabit(\'' + h.id + '\')">&#215;</button>' : '') +
       '</div>' +
       (hasNote ? '<div class="habit-note" id="hn-' + h.id + '" style="display:none;">' + escHtml(h.note) + '</div>' : '') +
@@ -554,11 +557,12 @@ function renderHistory() {
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 function toggleHabit(id) {
-  if (viewDay !== todayKey()) return;
-  const wk = state.currentWeekKey;
-  if (!state.weekChecks[wk]) state.weekChecks[wk] = {};
-  if (!state.weekChecks[wk][viewDay]) state.weekChecks[wk][viewDay] = {};
-  state.weekChecks[wk][viewDay][id] = !state.weekChecks[wk][viewDay][id];
+  const retainedWeeks = new Set([state.currentWeekKey, prevWeekKey(state.currentWeekKey)]);
+  const vdWk = weekKeyOf(viewDay);
+  if (!retainedWeeks.has(vdWk)) return;
+  if (!state.weekChecks[vdWk]) state.weekChecks[vdWk] = {};
+  if (!state.weekChecks[vdWk][viewDay]) state.weekChecks[vdWk][viewDay] = {};
+  state.weekChecks[vdWk][viewDay][id] = !state.weekChecks[vdWk][viewDay][id];
   save(); render();
 }
 
@@ -646,7 +650,7 @@ let editCtx = null; // { type: 'habit'|'reward', id }
 function openEditHabit(id) {
   const h = state.habits.find(h => h.id === id);
   if (!h) return;
-  editCtx = { type: 'habit', id };
+  editCtx = { type: 'habit', id, day: viewDay };
   document.getElementById('sheet-title').textContent = 'Edit habit';
   document.getElementById('sheet-name').value = h.name;
   document.getElementById('sheet-note').value = h.note || '';

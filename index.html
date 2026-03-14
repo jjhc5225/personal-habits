@@ -162,6 +162,21 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 
 .toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-family: var(--font-body); opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 999; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Edit sheet — bottom sheet modal */
+.sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.sheet-backdrop.open { opacity: 1; pointer-events: all; }
+.sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-radius: 20px 20px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom)); z-index: 101; transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.32,0.72,0,1); max-width: 500px; margin: 0 auto; }
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 36px; height: 4px; background: var(--surface2); border-radius: 2px; margin: 0 auto 18px; }
+.sheet-title { font-size: 13px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.sheet input, .sheet textarea { width: 100%; background: var(--surface); border: 1px solid var(--border-med); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 15px; color: var(--text); font-family: var(--font-body); margin-bottom: 10px; outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+.sheet input:focus, .sheet textarea:focus { border-color: var(--text-2); }
+.sheet textarea { height: 80px; resize: none; }
+.sheet input::placeholder, .sheet textarea::placeholder { color: var(--text-3); }
+.sheet-actions { display: flex; gap: 10px; margin-top: 4px; }
+.btn-save { flex: 1; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); padding: 11px; font-size: 14px; font-weight: 500; font-family: var(--font-body); cursor: pointer; }
+.btn-cancel { background: none; border: 1px solid var(--border-med); border-radius: var(--radius-sm); padding: 11px 18px; font-size: 14px; color: var(--text-2); font-family: var(--font-body); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -246,6 +261,22 @@ body { padding-bottom: env(safe-area-inset-bottom); }
     </div>
 
     <div class="history-section" id="history-section"></div>
+  </div>
+</div>
+
+<!-- Edit sheet -->
+<div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="edit-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sheet-title">Edit</div>
+  <input type="text" id="sheet-name" placeholder="Name" maxlength="80">
+  <div id="sheet-cost-row" style="display:none;">
+    <input type="number" id="sheet-cost" placeholder="Coins needed" min="1">
+  </div>
+  <textarea id="sheet-note" placeholder="Notes (optional)"></textarea>
+  <div class="sheet-actions">
+    <button class="btn-cancel" onclick="closeSheet()">Cancel</button>
+    <button class="btn-save" onclick="saveEdit()">Save</button>
   </div>
 </div>
 
@@ -463,6 +494,7 @@ function renderHabits() {
       '<button class="check-circle' + (done?' on':'') + '"' + (isToday?'':' disabled') + ' onclick="toggleHabit(\'' + h.id + '\')"></button>' +
       '<span class="habit-name' + (done?' crossed':'') + '">' + escHtml(h.name) + '</span>' +
       (hasNote ? '<button class="icon-btn" onclick="toggleEl(\'hn-' + h.id + '\')">note</button>' : '') +
+      (isToday ? '<button class="icon-btn" onclick="openEditHabit(\'' + h.id + '\')">edit</button>' : '') +
       (isToday ? '<button class="icon-btn" onclick="deleteHabit(\'' + h.id + '\')">&#215;</button>' : '') +
       '</div>' +
       (hasNote ? '<div class="habit-note" id="hn-' + h.id + '" style="display:none;">' + escHtml(h.note) + '</div>' : '') +
@@ -498,6 +530,7 @@ function renderRewards() {
           ? '<span class="redeemed-lbl">Redeemed</span>'
           : '<button class="redeem-btn' + (canAfford?' ready':'') + '" onclick="redeemReward(\'' + r.id + '\')">' +
               (canAfford ? 'Redeem' : state.coins + '/' + r.cost + ' coins') + '</button>') +
+        '<button class="icon-btn" onclick="openEditReward(\'' + r.id + '\')">edit</button>' +
         '<button class="icon-btn" onclick="deleteReward(\'' + r.id + '\')">&#215;</button>' +
       '</div></div>';
   }).join('');
@@ -605,6 +638,65 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Edit sheet ────────────────────────────────────────────────────────────────
+let editCtx = null; // { type: 'habit'|'reward', id }
+
+function openEditHabit(id) {
+  const h = state.habits.find(h => h.id === id);
+  if (!h) return;
+  editCtx = { type: 'habit', id };
+  document.getElementById('sheet-title').textContent = 'Edit habit';
+  document.getElementById('sheet-name').value = h.name;
+  document.getElementById('sheet-note').value = h.note || '';
+  document.getElementById('sheet-cost-row').style.display = 'none';
+  openSheet();
+}
+
+function openEditReward(id) {
+  const r = state.rewards.find(r => r.id === id);
+  if (!r) return;
+  editCtx = { type: 'reward', id };
+  document.getElementById('sheet-title').textContent = 'Edit reward';
+  document.getElementById('sheet-name').value = r.name;
+  document.getElementById('sheet-note').value = r.note || '';
+  document.getElementById('sheet-cost').value = r.cost;
+  document.getElementById('sheet-cost-row').style.display = 'block';
+  openSheet();
+}
+
+function openSheet() {
+  document.getElementById('sheet-backdrop').classList.add('open');
+  document.getElementById('edit-sheet').classList.add('open');
+  setTimeout(() => document.getElementById('sheet-name').focus(), 320);
+}
+
+function closeSheet() {
+  document.getElementById('sheet-backdrop').classList.remove('open');
+  document.getElementById('edit-sheet').classList.remove('open');
+  editCtx = null;
+}
+
+function saveEdit() {
+  if (!editCtx) return;
+  const name = document.getElementById('sheet-name').value.trim();
+  if (!name) return;
+  const note = document.getElementById('sheet-note').value.trim();
+
+  if (editCtx.type === 'habit') {
+    const h = state.habits.find(h => h.id === editCtx.id);
+    if (h) { h.name = name; h.note = note; }
+  } else {
+    const cost = parseInt(document.getElementById('sheet-cost').value);
+    if (!cost || cost < 1) return;
+    const r = state.rewards.find(r => r.id === editCtx.id);
+    if (r) { r.name = name; r.note = note; r.cost = cost; }
+  }
+
+  closeSheet();
+  save(); render();
+  toast('Saved!');
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
